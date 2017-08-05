@@ -102,7 +102,7 @@ module* Proc::GetModuleByName(const wchar_t* ModuleName)
 
 			uint64_t dllSize = Read<uint64_t>((UINT64)first + 0x30);
 			uint64_t dllBase = Read<uint64_t>((UINT64)first + 0x20);
-			std::cout << "Base: " << std::hex << dllBase << "\nSize: " << dllSize << '\n';
+			
 			if (!dllBase)
 				break;
 
@@ -110,7 +110,7 @@ module* Proc::GetModuleByName(const wchar_t* ModuleName)
 			WORD dlllen = Read<WORD>((UINT64)first + 0x48);
 
 			Read(dllbuffer, (PVOID)lel, (size_t)dlllen);
-			printf("%S\n", lel);
+			
 
 			first = Read<PLDR_DATA_TABLE_ENTRY>(first);
 		} while (first != end);
