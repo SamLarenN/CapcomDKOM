@@ -90,8 +90,6 @@ void __stdcall ExploitFunc(fnMmGetSystemRoutineAddress MmGetSystemRoutineAddress
 			
 			if (!v12 || !v13 || !PhysAddress.QuadPart)
 			{
-				if (Process != NULL)
-					g_pKernelFuncs->ObDereferenceObject(Process);
 				Data->Success = false;
 				return;
 			}
@@ -99,8 +97,6 @@ void __stdcall ExploitFunc(fnMmGetSystemRoutineAddress MmGetSystemRoutineAddress
 			PVOID v17 = g_pKernelFuncs->MmMapIoSpace(PhysAddress, v12, MEMORY_CACHING_TYPE::MmNonCached);	// Map the physical address to a virtual address
 			if (!v17)
 			{
-				if (Process != NULL)
-					g_pKernelFuncs->ObDereferenceObject(Process);
 				Data->Success = false;
 				return;
 			}
