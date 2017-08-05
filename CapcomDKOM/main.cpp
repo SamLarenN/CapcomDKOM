@@ -10,11 +10,8 @@ int main()
 	std::cout << g_pMem->Read<int>(&michi) << '\n';
 	HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, g_pMem->GetProcessIdByName("csgo.exe"));
 	g_pMem->ChangeHandleAccess(h, PROCESS_ALL_ACCESS);
-	//ReadProcessMemory(h, &michi, &jafar, sizeof(int), NULL);
+	ReadProcessMemory(h, &michi, &jafar, sizeof(int), NULL);
 	std::cout << jafar << '\n';
-
-	module* client = g_pMem->GetModuleByName(L"clie");
-	std::cout << client->dwBase << std::endl;
 
 	g_pMem->Detach();
 	std::cin.get();
