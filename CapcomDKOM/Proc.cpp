@@ -23,9 +23,10 @@ bool Proc::OnSetup(const char* ProcessName)
 	if (!DirectoryTableBase)
 		goto exit;
 
-	pPEB = ReadPEBPointer() + IsProcess32bit ? 0x1000 : 0;	// If the process is 32bit, then the PEB32 is 0x1000 from the PEB64.
+	pPEB = ReadPEBPointer();	
 	if (!pPEB)
 		goto exit;
+	pPEB += IsProcess32bit ? 0x1000 : 0;	// If the process is 32bit, then the PEB32 is 0x1000 from the PEB64.
 	
 
 	CloseHandle(hProc);		// We only want this handle to query process info. Close it.
@@ -52,35 +53,67 @@ void Proc::Detach()
 module* Proc::GetModuleByName(const wchar_t* ModuleName)
 {
 	wchar_t* lel = new wchar_t[MAX_PATH];
-	DWORD pebldr = Read<DWORD>(pPEB + 0xC);	// Read PEB_LDR_DATA*
-	if (pebldr)
+	if (IsProcess32bit)
 	{
-		DWORD first = Read<DWORD>(pebldr + 0x14);	// Read first entry, (flink)
-		if (first)
+		DWORD pebldr = Read<DWORD>(pPEB + 0xC);	// Read PEB_LDR_DATA*
+		if (pebldr)
 		{
-			DWORD end = first;
-			do
+			DWORD first = Read<DWORD>(pebldr + 0x14);	// Read first entry, (flink)
+			if (first)
 			{
-				ZeroMemory(lel, MAX_PATH);
-				DWORD dllSize = Read<DWORD>(first + 0x18);
-				DWORD dllBase = Read<DWORD>(first + 0x10);
-
-				if (!dllBase)
-					break;
-
-				DWORD dllbuffer = Read<DWORD>(first + 0x28);
-				WORD dlllen = Read<WORD>(first + 0x24);
-				Read(dllbuffer, (PVOID)lel, (size_t)dlllen);
-				
-				if (!wcscmp(lel, ModuleName))
+				DWORD end = first;
+				do
 				{
-					module* mod = new module(dllBase, dllSize);
-					return mod;
-				}
+					ZeroMemory(lel, MAX_PATH);
+					DWORD dllSize = Read<DWORD>(first + 0x18);
+					DWORD dllBase = Read<DWORD>(first + 0x10);
 
-				first = Read<DWORD>(first);
-			} while (first != end);		// Walk the entirety of the modules until we are back to the start
+					if (!dllBase)
+						return 0;
+
+					DWORD dllbuffer = Read<DWORD>(first + 0x28);
+					WORD dlllen = Read<WORD>(first + 0x24);
+
+					Read(dllbuffer, (PVOID)lel, (size_t)dlllen);
+
+					if (!wcscmp(lel, ModuleName))
+					{
+						module* mod = new module(dllBase, dllSize);
+						return mod;
+					}
+
+					first = Read<DWORD>(first);
+				} while (first != end);		// Walk the entirety of the modules until we are back to the start
+			}
 		}
+	}
+	else
+	{
+		PPEB peb = (PPEB)pPEB;
+		
+		PPEB_LDR_DATA pebldr = Read<PPEB_LDR_DATA>(&peb->Ldr);	// Read PEB_LDR_DATA*
+
+		PLDR_DATA_TABLE_ENTRY first = Read<PLDR_DATA_TABLE_ENTRY>(&pebldr->InMemoryOrderModuleList);	// Read first entry, (flink)
+		PLDR_DATA_TABLE_ENTRY end = first;
+		do
+		{
+			wchar_t* lel = new wchar_t[MAX_PATH];
+			ZeroMemory(lel, MAX_PATH);
+
+			uint64_t dllSize = Read<uint64_t>((UINT64)first + 0x30);
+			uint64_t dllBase = Read<uint64_t>((UINT64)first + 0x20);
+			std::cout << "Base: " << std::hex << dllBase << "\nSize: " << dllSize << '\n';
+			if (!dllBase)
+				break;
+
+			uint64_t dllbuffer = Read<uint64_t>((UINT64)first + 0x48 + 8);
+			WORD dlllen = Read<WORD>((UINT64)first + 0x48);
+
+			Read(dllbuffer, (PVOID)lel, (size_t)dlllen);
+			printf("%S\n", lel);
+
+			first = Read<PLDR_DATA_TABLE_ENTRY>(first);
+		} while (first != end);
 	}
 	return 0;
 }
@@ -204,9 +237,9 @@ bool Proc::ReadPhysicalAddress(uint64_t address, PVOID buffer, size_t length)
 
 	Data.IOCTL = IOCTL_READ;
 	Data.Address = address;
-	Data.Length = sizeof(length);
+	Data.Length = length;
 	Data.Buffer = (uint64_t)buffer;
-
+	
 	g_pCapcomIoctl->Build(ExploitFunc, &Data);
 	g_pCapcomIoctl->Run(hDeviceDriver);
 	g_pCapcomIoctl->Free();
@@ -244,7 +277,7 @@ bool Proc::WritePhysicalAddress(uint64_t address, PVOID buffer, size_t length)
 
 	Data.IOCTL = IOCTL_WRITE;
 	Data.Address = address;
-	Data.Length = sizeof(length);
+	Data.Length = length;
 	Data.Buffer = (uint64_t)buffer;
 
 	g_pCapcomIoctl->Build(ExploitFunc, &Data);

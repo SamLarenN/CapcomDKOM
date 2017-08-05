@@ -4,16 +4,17 @@
 class module
 {
 public:
-	const DWORD dwBase, dwSize;
+	const uint64_t dwBase, dwSize;
 
 public:
-	module(DWORD base, DWORD size)
+	module(uint64_t base, uint64_t size)
 		: dwBase(base),
 		dwSize(size)
 	{
 	}
 
 };
+
 
 class Proc
 {

