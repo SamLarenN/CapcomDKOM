@@ -5,11 +5,17 @@ int jafar = 0;
 
 int main()
 {
-	g_pMem->OnSetup("lelerz.exe");	// Attach to process
-	
-	g_pMem->GetModuleByName(L"d");
+	if (g_pMem->OnSetup("CapcomPhysical.exe"))	// Attach to process
+	{
+		std::cout << g_pMem->Read<int>(&michi) << '\n';
+		HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, g_pMem->GetProcessIdByName("CapcomPhysical.exe"));
+		g_pMem->ChangeHandleAccess(h, PROCESS_ALL_ACCESS);
 
-	g_pMem->Detach();
+		ReadProcessMemory(h, &michi, &jafar, sizeof(int), 0);
+		std::cout << jafar << '\n';
+
+		g_pMem->Detach();
+	}
 	std::cin.get();
 	return 0;
 }
