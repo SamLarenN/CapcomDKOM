@@ -19,7 +19,7 @@ public:
 class Proc
 {
 public:
-	bool OnSetup(const char* ProcessId);
+	bool OnSetup(const char* ProcessName);
 	void Detach();
 	uint32_t GetProcessIdByName(const char* ProcessName);
 	module* GetModuleByName(const wchar_t* ModuleName);
